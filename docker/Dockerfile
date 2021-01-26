@@ -1,17 +1,24 @@
 FROM alpine:latest
 
+ENV REPO_URL=https://github.com/lunnlew/AutoSignMachine.git
+
 WORKDIR /AutoSignMachine/
 
-RUN apk add --no-cache tzdata nodejs npm
-RUN ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+RUN set -ex \
+        && apk update && apk upgrade\
+        && apk add --no-cache tzdata  git  nodejs  moreutils  npm curl jq \
+        && ln -sf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
+        && echo "Asia/Shanghai" > /etc/timezone
 
-# 复制代码
-COPY . /AutoSignMachine/
+RUN git clone ${REPO_URL} /AutoSignMachine \
+        && cd /AutoSignMachine \
+        && git checkout main \
+        && mkdir logs \
+        && npm install
 
-RUN npm install
+RUN cp /AutoSignMachine/docker/entrypoint.sh / \
+        && chmod +x /entrypoint.sh
 
-COPY docker/entrypoint.sh /entrypoint.sh
-
-RUN chmod +x /entrypoint.sh
+WORKDIR /AutoSignMachine
 
 ENTRYPOINT /entrypoint.sh
